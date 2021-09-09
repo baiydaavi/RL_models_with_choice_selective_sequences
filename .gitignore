@@ -6,6 +6,15 @@ __pycache__/
 # C extensions
 *.so
 
+# ignore .idea files
+.idea
+
+# DS Store
+.DS_Store
+
+#logs
+/asinha4
+
 # Distribution / packaging
 .Python
 build/
@@ -127,3 +136,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/.gitattributes
+/.gitignore
