@@ -7,10 +7,11 @@ import tqdm
 
 from training_utils import get_expected_return, compute_loss_policy, \
     compute_loss_value
+from utils import create_gif, make_gif
 
 
 class MetaRLModel:
-    """Combined actor-critic network."""
+    """Meta-RL model"""
 
     def __init__(
             self,
@@ -118,23 +119,6 @@ class MetaRLModel:
                     self.model.save_weights(
                         self.model_path + '/model-' + str(i) + '/model-' + str(
                             i))
-
-    def training_saver(self):
-
-        dir_name = f'training_data/{self.learning_rate}_{self.switch_prob}_' \
-                   f'{self.num_hidden_units}_{self.gamma}'
-
-        model_path = dir_name + '/model'
-        frame_path = dir_name + '/frames'
-
-        # create the directories
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
-
-        if not os.path.exists(frame_path):
-            os.makedirs(frame_path)
-
-        return model_path, frame_path
 
     def run_episode(
             self,
@@ -296,3 +280,20 @@ class MetaRLModel:
             zip(grads, self.model.trainable_variables))
 
         return loss
+
+    def training_saver(self):
+
+        dir_name = f'training_data/{self.learning_rate}_{self.switch_prob}_' \
+                   f'{self.num_hidden_units}_{self.gamma}'
+
+        model_path = dir_name + '/model'
+        frame_path = dir_name + '/frames'
+
+        # create the directories
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+
+        if not os.path.exists(frame_path):
+            os.makedirs(frame_path)
+
+        return model_path, frame_path
