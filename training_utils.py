@@ -7,7 +7,7 @@ import tensorflow as tf
 def get_expected_return(
         rewards: tf.Tensor,
         gammas: tf.Tensor,) -> tf.Tensor:
-    """Compute expected returns per timestep."""
+    """Compute expected returns per time step."""
 
     n = tf.shape(rewards)[0]
     returns = tf.TensorArray(dtype=tf.float32, size=n)
@@ -18,14 +18,15 @@ def get_expected_return(
     gammas = tf.cast(gammas[::-1], dtype=tf.float32)
     discounted_sum = tf.constant(0.0)
     discounted_sum_shape = discounted_sum.shape
+
     for i in tf.range(n):
         reward = rewards[i]
         gamma_val = gammas[i]
         discounted_sum = reward + gamma_val * discounted_sum
         discounted_sum.set_shape(discounted_sum_shape)
         returns = returns.write(i, discounted_sum)
-    returns = returns.stack()[::-1]
 
+    returns = returns.stack()[::-1]
     return returns
 
 
@@ -34,7 +35,7 @@ def compute_loss_policy(
         probs: tf.Tensor,
         advantages: tf.Tensor,
         entropy_coef: float = 0.05) -> tf.Tensor:
-    """Computes the combined actor-critic loss."""
+    """Computes the actor loss."""
 
     policy_loss = - tf.math.reduce_sum(tf.math.log(action_probs) * advantages)
 
@@ -47,7 +48,7 @@ def compute_loss_value(
         values: tf.Tensor,
         returns: tf.Tensor,
         value_coef: float = 0.05) -> tf.Tensor:
-    """Computes the combined actor-critic loss."""
+    """Computes the critic loss."""
 
     val_err = returns - values
 
