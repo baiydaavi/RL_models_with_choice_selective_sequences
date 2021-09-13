@@ -52,9 +52,7 @@ class MetaRLModel:
             self.model.load_weights(load_model)
 
         with tqdm.trange(self.max_episodes) as t:
-
-            for i in t:
-
+            for episode in t:
                 self.env.reset()
                 initial_action = np.random.choice([1, 2])
                 initial_obs_state, initial_reward, _, _ = self.env.step(
@@ -102,23 +100,23 @@ class MetaRLModel:
 
                 episode_reward = tf.math.reduce_sum(rewards)
 
-                t.set_description(f'Episode {i}')
+                t.set_description(f'Episode {episode}')
                 t.set_postfix(
                     episode_reward=episode_reward, episode_loss=episode_loss)
 
-                # Show average episode reward every 10 episodes
-                if i % 2000 == 0:
+                # Save model weights and create GIF depicting model behavior
+                if episode % 2000 == 0:
+                    self.model.save_weights(
+                        self.model_path + '/model-' + str(
+                            episode) + '/model-' + str(episode))
+
                     episode_frames = [rewards.numpy(), rew_probs.numpy(),
                                       actions.numpy(), timesteps.numpy()]
                     img_list = create_gif(episode_frames)
                     ep_type = "/train_"
                     make_gif(img_list,
-                             self.frame_path + ep_type + str(i) + '.gif',
+                             self.frame_path + ep_type + str(episode) + '.gif',
                              duration=len(img_list) * 0.1, true_image=True)
-
-                    self.model.save_weights(
-                        self.model_path + '/model-' + str(i) + '/model-' + str(
-                            i))
 
     def run_episode(
             self,
@@ -147,10 +145,10 @@ class MetaRLModel:
 
         num_neurons = self.left_choice_activity.shape[1]
 
-        for t in tf.range(self.max_steps_per_episode):
+        for step_num in tf.range(self.max_steps_per_episode):
 
-            critic_obs_seq = critic_obs_seq.write(t, critic_obs)
-            actor_obs_seq = actor_obs_seq.write(t, actor_obs)
+            critic_obs_seq = critic_obs_seq.write(step_num, critic_obs)
+            actor_obs_seq = actor_obs_seq.write(step_num, actor_obs)
 
             # Convert state into a batched tensor (batch size = 1)
             critic_obs = tf.expand_dims(tf.expand_dims(critic_obs, 0), 0)
@@ -195,7 +193,7 @@ class MetaRLModel:
             else:
                 choice_act = tf.zeros(num_neurons, tf.float32)
 
-            gammas = gammas.write(t, gamma_val)
+            gammas = gammas.write(step_num, gamma_val)
 
             critic_obs = tf.concat([choice_act, [reward]], 0)
             actor_obs = tf.concat(
@@ -204,18 +202,18 @@ class MetaRLModel:
                  [value], [gamma_val]], 0)
 
             # Store reward
-            values = values.write(t, value)
-            rpes = rpes.write(t, tf.squeeze(rpe))
-            rewards = rewards.write(t, reward)
+            values = values.write(step_num, value)
+            rpes = rpes.write(step_num, tf.squeeze(rpe))
+            rewards = rewards.write(step_num, reward)
 
             # Store action
-            actions = actions.write(t, tf.cast(action, tf.int32))
+            actions = actions.write(step_num, tf.cast(action, tf.int32))
 
             # Store timestep
-            timesteps = timesteps.write(t, timestep)
+            timesteps = timesteps.write(step_num, timestep)
 
             # Store reward probability
-            rew_probs = rew_probs.write(t, self.env.bandit)
+            rew_probs = rew_probs.write(step_num, self.env.bandit)
 
         actor_obs_seq = actor_obs_seq.stack()
         crtic_obs_seq = critic_obs_seq.stack()
@@ -255,10 +253,9 @@ class MetaRLModel:
             probs = tf.nn.softmax(logits)
             action_probs = tf.TensorArray(dtype=tf.float32, size=0,
                                           dynamic_size=True)
-
-            for t in tf.range(len(actions)):
-                action_probs = action_probs.write(t, probs[t, actions[t]])
-
+            for item in tf.range(len(actions)):
+                action_probs = action_probs.write(item,
+                                                  probs[item, actions[item]])
             action_probs = action_probs.stack()
 
             # Convert training data to appropriate TF tensor shapes
@@ -283,8 +280,8 @@ class MetaRLModel:
 
     def training_saver(self):
 
-        dir_name = f'training_data/{self.learning_rate}_{self.switch_prob}_' \
-                   f'{self.num_hidden_units}_{self.gamma}'
+        dir_name = f'training_data/learning_rate={self.learning_rate}' \
+                   f'_hidden_units={self.num_hidden_units}'
 
         model_path = dir_name + '/model'
         frame_path = dir_name + '/frames'
@@ -292,7 +289,6 @@ class MetaRLModel:
         # create the directories
         if not os.path.exists(model_path):
             os.makedirs(model_path)
-
         if not os.path.exists(frame_path):
             os.makedirs(frame_path)
 
