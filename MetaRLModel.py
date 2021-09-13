@@ -61,12 +61,12 @@ class MetaRLModel:
                 if initial_action == 1:
                     choice_act = tf.convert_to_tensor(
                         self.left_choice_activity[
-                        self.rand_activity_trial_num, :, initial_obs_state],
+                        self.env.rand_activity_trial_num, :, initial_obs_state],
                         dtype=tf.float32)
                 else:
                     choice_act = tf.convert_to_tensor(
                         self.right_choice_activity[
-                        self.rand_activity_trial_num, :, initial_obs_state],
+                        self.env.rand_activity_trial_num, :, initial_obs_state],
                         dtype=tf.float32)
 
                 initial_critic_obs = tf.concat([choice_act, [initial_reward]],
@@ -180,13 +180,15 @@ class MetaRLModel:
 
             if self.env.choice == 1:
                 choice_act = tf.convert_to_tensor(
-                    self.left_choice_activity[self.rand_activity_trial_num, :,
+                    self.left_choice_activity[
+                    self.env.rand_activity_trial_num, :,
                     obs_state],
                     dtype=tf.float32)
 
             elif self.env.choice == 0:
                 choice_act = tf.convert_to_tensor(
-                    self.right_choice_activity[self.rand_activity_trial_num, :,
+                    self.right_choice_activity[
+                    self.env.rand_activity_trial_num, :,
                     obs_state],
                     dtype=tf.float32)
 
