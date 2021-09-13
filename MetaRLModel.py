@@ -60,13 +60,13 @@ class MetaRLModel:
 
                 if initial_action == 1:
                     choice_act = tf.convert_to_tensor(
-                        self.left_choice_activity[self.env.rand_trial, :,
-                        initial_obs_state],
+                        self.left_choice_activity[
+                        self.rand_activity_trial_num, :, initial_obs_state],
                         dtype=tf.float32)
                 else:
                     choice_act = tf.convert_to_tensor(
-                        self.right_choice_activity[self.env.rand_trial, :,
-                        initial_obs_state],
+                        self.right_choice_activity[
+                        self.rand_activity_trial_num, :, initial_obs_state],
                         dtype=tf.float32)
 
                 initial_critic_obs = tf.concat([choice_act, [initial_reward]],
@@ -180,13 +180,13 @@ class MetaRLModel:
 
             if self.env.choice == 1:
                 choice_act = tf.convert_to_tensor(
-                    self.left_choice_activity[self.env.rand_trial, :,
+                    self.left_choice_activity[self.rand_activity_trial_num, :,
                     obs_state],
                     dtype=tf.float32)
 
             elif self.env.choice == 0:
                 choice_act = tf.convert_to_tensor(
-                    self.right_choice_activity[self.env.rand_trial, :,
+                    self.right_choice_activity[self.rand_activity_trial_num, :,
                     obs_state],
                     dtype=tf.float32)
 
@@ -213,7 +213,7 @@ class MetaRLModel:
             timesteps = timesteps.write(step_num, timestep)
 
             # Store reward probability
-            rew_probs = rew_probs.write(step_num, self.env.bandit)
+            rew_probs = rew_probs.write(step_num, self.env.reward_prob)
 
         actor_obs_seq = actor_obs_seq.stack()
         crtic_obs_seq = critic_obs_seq.stack()
