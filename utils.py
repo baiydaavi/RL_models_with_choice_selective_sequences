@@ -9,6 +9,13 @@ from PIL import ImageDraw
 from PIL import ImageFont
 
 
+def softmax(x):
+    """Softmax function"""
+
+    exps = np.exp(x)
+    return exps / np.sum(exps, axis=1).reshape(-1, 1)
+
+
 def normalized_gaussian(x, mu, sig):
     """Function defining normalized gaussian
     Args:
@@ -20,7 +27,7 @@ def normalized_gaussian(x, mu, sig):
     """
 
     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))) * (
-                1 / np.sqrt(2 * np.pi * np.power(sig, 2.)))
+            1 / np.sqrt(2 * np.pi * np.power(sig, 2.)))
 
 
 def set_image_bandit(type_rew, valuess, probs, selection, trial):
@@ -82,7 +89,7 @@ def create_gif(episode_frames):
         type_rew = -1 if episode_frames[0][i] == -1 else 1
         img_list.append(
             set_image_bandit(type_rew, ep_reward, episode_frames[1][i],
-                                 episode_frames[2][i], episode_frames[3][i]))
+                             episode_frames[2][i], episode_frames[3][i]))
         ep_reward[episode_frames[2][i]] += abs(episode_frames[0][i])
 
     return img_list
