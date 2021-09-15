@@ -20,8 +20,8 @@ class ActorCriticLSTM(tf.keras.Model):
                                       return_sequences=True)
         self.critic_LSTM = layers.LSTM(num_hidden_units, return_state=True,
                                        return_sequences=True)
-        self.actor_output_layer = layers.Dense(num_actions)
-        self.critic_output_layer = layers.Dense(1)
+        self.actor = layers.Dense(num_actions)
+        self.critic = layers.Dense(1)
 
         self.gamma = gamma
 
@@ -36,7 +36,7 @@ class ActorCriticLSTM(tf.keras.Model):
             input_critic,
             initial_state=critic_lstm_state)
 
-        current_time_value = self.critic_output_layer(critic_LSTM_output)
+        current_time_value = self.critic(critic_LSTM_output)
 
         # calculating the RPE input using the reward input, the current time
         # value and the previous time value
@@ -50,7 +50,7 @@ class ActorCriticLSTM(tf.keras.Model):
         actor_LSTM_output, actor_state_h, actor_state_c = self.actor_LSTM(
             input_actor, initial_state=actor_lstm_state)
 
-        return self.actor_output_layer(actor_LSTM_output),\
+        return self.actor(actor_LSTM_output),\
                current_time_value, rpe_inp,\
                critic_state_h, critic_state_c,\
                actor_state_h, actor_state_c
