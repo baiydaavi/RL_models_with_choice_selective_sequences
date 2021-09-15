@@ -101,6 +101,7 @@ class TestingEnvironment:
         self.len_time_array = len(self.time_array)
         self.current_trial_time = 0
         self.current_episode_time = 0
+        self.trial_count_in_block = 0
 
         self.mean_reward_time_array = np.round(np.arange(0.2, 1.3, 0.1), 3)
         self.reward_width = reward_width
@@ -123,6 +124,7 @@ class TestingEnvironment:
 
         self.current_trial_time = 0
         self.current_episode_time = 0
+        self.trial_count_in_block = 0
 
         self.reward_array = normalized_gaussian(self.time_array,
                                                 np.random.choice(
@@ -162,6 +164,9 @@ class TestingEnvironment:
                 if np.random.uniform() > 0.4:
                     self.reward_prob = list(reversed(self.reward_prob))
                     self.reward_count = 0
+                    self.trial_count_in_block = 0
+
+            self.trial_count_in_block += 1
 
             if action == 0:
                 reward = -1
@@ -180,7 +185,7 @@ class TestingEnvironment:
                                   self.len_time_array
 
         return self.current_trial_time, reward, self.is_rewarded, \
-               self.current_episode_time
+               self.trial_count_in_block
 
 
 class OptoTestingEnvironment:
@@ -192,6 +197,7 @@ class OptoTestingEnvironment:
         self.len_time_array = len(self.time_array)
         self.current_trial_time = 0
         self.current_episode_time = 0
+        self.trial_count_in_block = 0
 
         self.mean_reward_time_array = np.round(np.arange(0.2, 1.3, 0.1), 3)
         self.reward_width = reward_width
@@ -216,6 +222,7 @@ class OptoTestingEnvironment:
 
         self.current_trial_time = 0
         self.current_episode_time = 0
+        self.trial_count_in_block = 0
 
         self.reward_array = normalized_gaussian(self.time_array,
                                                 np.random.choice(
@@ -262,6 +269,9 @@ class OptoTestingEnvironment:
                 if np.random.uniform() > 0.4:
                     self.reward_prob = list(reversed(self.reward_prob))
                     self.reward_count = 0
+                    self.trial_count_in_block = 0
+
+            self.trial_count_in_block += 1
 
             if action == 0:
                 reward = -1
@@ -283,7 +293,7 @@ class OptoTestingEnvironment:
                                   self.len_time_array
 
         return self.current_trial_time, reward, self.is_rewarded, \
-               self.current_episode_time
+               self.trial_count_in_block
 
 
 class FixedBlockTestingEnvironment:
@@ -295,6 +305,7 @@ class FixedBlockTestingEnvironment:
         self.len_time_array = len(self.time_array)
         self.current_trial_time = 0
         self.current_episode_time = 0
+        self.trial_count_in_block = 0
 
         self.mean_reward_time_array = np.round(np.arange(0.2, 1.3, 0.1), 3)
         self.reward_width = reward_width
@@ -304,7 +315,6 @@ class FixedBlockTestingEnvironment:
                                                 self.reward_width)
         self.reward_array[self.time_array <= 0.0] = 0.0
         self.is_rewarded = 0
-        self.trial_count_in_block = 0
 
         self.reward_prob = [0.7, 0.1] if np.random.uniform() <= 0.5 else [0.1,
                                                                           0.7]
@@ -317,6 +327,7 @@ class FixedBlockTestingEnvironment:
 
         self.current_trial_time = 0
         self.current_episode_time = 0
+        self.trial_count_in_block = 0
 
         self.reward_array = normalized_gaussian(self.time_array,
                                                 np.random.choice(
@@ -324,7 +335,6 @@ class FixedBlockTestingEnvironment:
                                                 self.reward_width)
         self.reward_array[self.time_array <= 0.0] = 0.0
         self.is_rewarded = 0
-        self.trial_count_in_block = 0
 
         self.reward_prob = [0.7, 0.1] if np.random.uniform() <= 0.5 else [0.1,
                                                                           0.7]
