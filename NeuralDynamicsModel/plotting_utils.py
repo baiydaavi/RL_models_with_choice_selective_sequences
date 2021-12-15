@@ -1,12 +1,11 @@
 import glob
-
+import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 import statsmodels.api as sm
-import tqdm
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import MaxNLocator
 from numpy.linalg import norm
@@ -47,7 +46,7 @@ class GenerateTestPlots:
         self.actor_cs = []
         self.is_stimulateds = []
 
-        for file in tqdm.tqdm(testing_files):  #[:3]
+        for file in tqdm.tqdm(testing_files):  # [:3]
             testing_data = np.load(file)
             self.current_trial_times.append(testing_data['current_trial_times'])
             self.trial_count_in_blocks.append(
@@ -1255,9 +1254,21 @@ class GenerateTestPlots:
             plt.savefig(save, bbox_inches="tight")
 
     def actor_lstm_PC_overlap_with_output(self,
-                                          actor_weights,
                                           num_pca_components=3,
                                           save=None):
+
+        from environment import TestingEnvironment
+        from model_arch import ActorCriticLSTM
+        from MetaRLModel import MetaRLModel
+
+        MetaRLModel = MetaRLModel(
+            ActorCriticLSTM(),
+            TestingEnvironment(reward_width=0.3),
+            np.load("helper_files/PL-NAc-Activity.npz"),
+        )
+
+        actor_weights = MetaRLModel.load_weights(
+            load_model="best_model/model-62000")["ActorOutput"]
 
         lstm_state = self.actor_hs[self.current_trial_times == 2, :]
 
