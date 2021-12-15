@@ -139,3 +139,7 @@ dmypy.json
 /.gitattributes
 /.gitignore
 /training_helper.py
+/SynapticPlasticityModel/
+/NeuralDynamicsModel/testing_data/
+/NeuralDynamicsModel/test_plots/
+/NeuralDynamicsModel/run_test.py
