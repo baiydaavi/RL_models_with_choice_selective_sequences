@@ -12,9 +12,6 @@ __pycache__/
 # DS Store
 .DS_Store
 
-#logs
-/asinha4
-
 # Distribution / packaging
 .Python
 build/
@@ -139,7 +136,10 @@ dmypy.json
 /.gitattributes
 /.gitignore
 /training_helper.py
-/SynapticPlasticityModel/
 /NeuralDynamicsModel/testing_data/
 /NeuralDynamicsModel/test_plots/
 /NeuralDynamicsModel/run_test.py
+/SynapticPlasticityModel/scratch.ipynb
+/SynapticPlasticityModel/scratch.py
+/SynapticPlasticityModel/recorded_data/
+/SynapticPlasticityModel/recorded_data.zip
