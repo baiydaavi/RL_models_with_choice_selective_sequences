@@ -167,11 +167,6 @@ class GenerateTestPlots:
 
     def stay_probability(self, mode=None, save=None):
         if mode == 'optogenetic':
-            norm_prob_rew_return = 0.0
-            norm_prob_unrew_return = 0.0
-
-            opto_prob_rew_return = 0.0
-            opto_prob_unrew_return = 0.0
 
             rewarded_trials = self.is_rewardeds[self.current_trial_times == 2]
             chosen_side = 2 * self.choices[self.current_trial_times == 2] - 1
