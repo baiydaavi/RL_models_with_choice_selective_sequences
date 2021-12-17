@@ -2,22 +2,7 @@ import random
 import numpy as np
 from tqdm import tqdm
 
-
-def gaussian(x, mu, sig):
-    """defining a gaussian function with 3 inputs - 'mu' is the values
-    corresponding to peak firing, sig is the values of standard deviation x is
-    the vector of values on which the gaussian is calculated"""
-    return np.exp(-np.power(x - mu, 2.0) / (2 * np.power(sig, 2.0)))
-
-
-def gaussian_normalised(x, mu, sig):
-    """defining a normalised gaussian function with 3 inputs - 'mu' is the
-    values corresponding to peak firing, sig is the values of standard
-    deviation x is the vector of values on which the gaussian is calculated"""
-    return np.exp(-np.power(x - mu, 2.0) / (2 * np.power(sig, 2.0))) * (
-            1 / np.sqrt(2 * np.pi * np.power(sig, 2.0))
-    )
-
+from SynapticPlasticityModel.utils import gaussian, gaussian_normalised
 
 def run_td_model(
         data_id="PL",
@@ -37,7 +22,8 @@ def run_td_model(
         step_time=0.01,
         synaptic_delay_time=0.01,
         reward_offset=0.2,
-        seed=4
+        seed=4,
+        save_NAc_activity=False
 ):
 
     choice_activity = np.load(f"recorded_data/{data_id}_{activity_type}.npz")
@@ -46,8 +32,7 @@ def run_td_model(
 
     synaptic_delay_steps = int(synaptic_delay_time / step_time)
 
-    times = np.arange(start_time, end_time, step_time)
-    times = times[1:None]
+    times = np.arange(start_time, end_time, step_time)[1:None]
 
     time_steps = np.arange(0, len(times), 1)  # indexing the time array
 
@@ -146,11 +131,8 @@ def run_td_model(
     # to make the choice(values function at nose poke)
     left_decision_value = np.zeros(num_trials)
 
-    # if num_trials < 5001:
-    #     # initialise the matrix encoding NAc right choice neuron firing for
-    #     # each trial at all time
-    #     NAc = np.zeros(
-    #         (num_trials, num_right_neurons + num_left_neurons, len(times)))
+    if save_NAc_activity:
+        NAcs = np.zeros((num_trials, num_neurons, len(times)))
 
     # Trial 0 doesn't involve updating the values function. It's a proxy trial
     # for the code to use the initial values
@@ -311,12 +293,12 @@ def run_td_model(
                 temporary_weights, current_trial_activity[:, current_time_step]
             )
 
-            # if num_trials < 5001:
-            #     # calculate right choice NAc firing for time step j using the
-            #     # updated weights
-            #     NAc[current_trial, :, current_time_step] = np.multiply(
-            #         temporary_weights,
-            #         current_trial_activity[:, current_time_step])
+            if save_NAc_activity:
+                # calculate right choice NAc firing for time step j using the
+                # updated weights
+                NAcs[current_trial, :, current_time_step] = np.multiply(
+                    temporary_weights,
+                    current_trial_activity[:, current_time_step])
 
             # Calculate prediction error
             RPE = (
@@ -359,7 +341,8 @@ def run_td_model(
         "right_decision_value": right_decision_value,
         "left_decision_value": left_decision_value,
         "peak_reward_times": peak_reward_times,
-        "step_time":step_time
+        "step_time": step_time,
+        "NAc_activity": NAcs if save_NAc_activity else 'not_available'
     }
 
 

@@ -1,3 +1,4 @@
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
@@ -21,6 +22,7 @@ class GenerateTestPlots:
         self.stimulated_trials = results['stimulated_trials']
         self.right_decision_value = results['right_decision_value']
         self.left_decision_value = results['left_decision_value']
+        self.NAc_activity = results['NAc_activity']
         self.peak_reward_times = results['peak_reward_times']
 
     ####################################
@@ -213,7 +215,7 @@ class GenerateTestPlots:
             unrewarded_trials = (self.rewarded_trials - 1) * -1
             next_choice = np.roll(self.choices, -1)
             return_rew = self.rewarded_trials * (
-                        (next_choice == self.choices) * 1)
+                    (next_choice == self.choices) * 1)
             prob_rew_return += np.sum(return_rew) / np.sum(self.rewarded_trials)
             return_unrew = unrewarded_trials * (
                     (next_choice == self.choices) * 1)
@@ -534,7 +536,7 @@ class GenerateTestPlots:
         plt.title(
             "Regressing DA activity at reward time against outcome",
             fontsize=20
-            )
+        )
         plt.scatter(np.arange(trials_back), regresion_results.params[1:None])
         plt.axhline(y=0, linestyle="dashed", color="k")
         plt.xlabel("trials back", fontsize=15)
@@ -613,8 +615,9 @@ class GenerateTestPlots:
 
     def rpe_plot(self, save=None):
 
-        rpe_rewarded = np.mean(self.RPEs[self.rewarded_trials==1, :], axis=0)
-        rpe_unrewarded = np.mean(self.RPEs[self.rewarded_trials==0, :], axis=0)
+        rpe_rewarded = np.mean(self.RPEs[self.rewarded_trials == 1, :], axis=0)
+        rpe_unrewarded = np.mean(self.RPEs[self.rewarded_trials == 0, :],
+                                 axis=0)
 
         plt.figure(figsize=(6, 3))
         plt.subplot(1, 2, 1)
@@ -628,6 +631,97 @@ class GenerateTestPlots:
         plt.plot(self.times, rpe_unrewarded, color='grey')
         plt.ylim(-0.4, 1)
         plt.xlabel("time", fontsize=20)
+
+        if save:
+            plt.savefig(save, bbox_inches="tight")
+
+    def plot_NAc_activity(self, max_heatmap_val=0.005, save=None):
+
+        block_switches = np.where(np.diff(self.high_prob_blocks) != 0)[0] + 1
+        early_trials = block_switches[0: len(block_switches) - 1]
+        middle_trials = early_trials + 4
+        late_trials = early_trials + 14
+
+        # block identity of each trial
+        block_iden = self.high_prob_blocks[early_trials]
+
+        # indeces for block and actual choice
+        left_left_early = early_trials[
+            (block_iden == 1) & (self.choices[early_trials] == 1)]
+        left_right_early = early_trials[
+            (block_iden == 1) & (self.choices[early_trials] == -1)
+            ]
+        right_right_early = early_trials[
+            (block_iden == -1) & (self.choices[early_trials] == -1)
+            ]
+        right_left_early = early_trials[
+            (block_iden == -1) & (self.choices[early_trials] == 1)
+            ]
+
+        left_left_middle = middle_trials[
+            (block_iden == 1) & (self.choices[middle_trials] == 1)
+            ]
+        left_right_middle = middle_trials[
+            (block_iden == 1) & (self.choices[middle_trials] == -1)
+            ]
+        right_right_middle = middle_trials[
+            (block_iden == -1) & (self.choices[middle_trials] == -1)
+            ]
+        right_left_middle = middle_trials[
+            (block_iden == -1) & (self.choices[middle_trials] == 1)
+            ]
+
+        left_left_late = late_trials[
+            (block_iden == 1) & (self.choices[late_trials] == 1)]
+        left_right_late = late_trials[
+            (block_iden == 1) & (self.choices[late_trials] == -1)]
+        right_right_late = late_trials[
+            (block_iden == -1) & (self.choices[late_trials] == -1)
+            ]
+        right_left_late = late_trials[
+            (block_iden == -1) & (self.choices[late_trials] == 1)]
+
+        NAc_heatmap = np.zeros((12, self.NAc_activity.shape[1],
+                                self.NAc_activity.shape[2]))
+
+        NAc_heatmap[0, :, :] = np.mean(
+            self.NAc_activity[left_left_early, :, :], axis=0)
+        NAc_heatmap[1, :, :] = np.mean(
+            self.NAc_activity[left_right_early, :, :], axis=0)
+        NAc_heatmap[2, :, :] = np.mean(
+            self.NAc_activity[right_left_early, :, :], axis=0)
+        NAc_heatmap[3, :, :] = np.mean(
+            self.NAc_activity[right_right_early, :, :], axis=0)
+
+        NAc_heatmap[4, :, :] = np.mean(
+            self.NAc_activity[left_left_middle, :, :], axis=0)
+        NAc_heatmap[5, :, :] = np.mean(
+            self.NAc_activity[left_right_middle, :, :], axis=0)
+        NAc_heatmap[6, :, :] = np.mean(
+            self.NAc_activity[right_left_middle, :, :], axis=0)
+        NAc_heatmap[7, :, :] = np.mean(
+            self.NAc_activity[right_right_middle, :, :], axis=0)
+
+        NAc_heatmap[8, :, :] = np.mean(
+            self.NAc_activity[left_left_late, :, :], axis=0)
+        NAc_heatmap[9, :, :] = np.mean(
+            self.NAc_activity[left_right_late, :, :], axis=0)
+        NAc_heatmap[10, :, :] = np.mean(
+            self.NAc_activity[right_left_late, :, :], axis=0)
+        NAc_heatmap[11, :, :] = np.mean(
+            self.NAc_activity[right_right_late, :, :], axis=0)
+
+        fig, axes = plt.subplots(nrows=3, ncols=4, figsize=(20, 15))
+        for i, ax in enumerate(axes.flat):
+            im = ax.imshow(NAc_heatmap[i, :, :],
+                           extent=[self.times[0], self.times[-1],
+                                   self.NAc_activity.shape[1], 0],
+                           aspect="auto",
+                           cmap=cm.cividis,
+                           vmin=0.0, vmax=max_heatmap_val)
+        fig.subplots_adjust(right=0.9)
+        cbar_ax = fig.add_axes([0.95, 0.15, 0.05, 0.7])
+        fig.colorbar(im, cax=cbar_ax)
 
         if save:
             plt.savefig(save, bbox_inches="tight")
