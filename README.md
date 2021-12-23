@@ -1,1 +1,1 @@
-# PL-NAc-Meta-RL-model
+# Models of decision making using choice-selective sequences
