@@ -143,3 +143,6 @@ dmypy.json
 /SynapticPlasticityModel/scratch.py
 /SynapticPlasticityModel/recorded_data/
 /SynapticPlasticityModel/recorded_data.zip
+/NeuralDynamicsModel/old_training_data/
+/NeuralDynamicsModel/training_data/
+/NeuralDynamicsModel/training_data.zip

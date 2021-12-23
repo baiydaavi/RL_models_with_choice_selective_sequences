@@ -1,16 +1,54 @@
 import glob
-import tqdm
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 import statsmodels.api as sm
+import tqdm
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import MaxNLocator
 from numpy.linalg import norm
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
+
+
+def plot_model_performances(input_types=['sequential', 'persistent',],
+                            labels=['choice-selective \nPL-NAc activity',
+                                    'choice-selective \npersistent activity',],
+                            episodes=np.arange(10000, 72000, 2000),
+                            learning_rate=0.001,
+                            num_hidden_units=128,
+                            save=None):
+    performance_results = {input_type: [] for input_type in input_types}
+
+    fig = plt.figure(figsize=(10, 6))
+
+    for input_type in input_types:
+        test_destination = (
+            f"training_data/{input_type}_input/learning_rate="
+            f"{learning_rate}_hidden_units={num_hidden_units}/"
+            f"model_performances/"
+        )
+        for episode in episodes:
+            testing_file = test_destination + f"/model-{episode}/" + \
+                           "test_0.npz"
+            testing_data = np.load(testing_file)
+            is_rewardeds = testing_data['is_rewardeds']
+            current_trial_times = testing_data['current_trial_times']
+            rewarded_trials = is_rewardeds[current_trial_times == 2]
+            performance_results[input_type].append(np.mean(rewarded_trials))
+        plt.plot(episodes, performance_results[input_type], label=input_type)
+
+    plt.xlabel("episodes")
+    plt.ylabel("reward rate")
+    plt.axhline(y=0.4, linestyle="dotted", color="k")
+    plt.ylim(0, 0.6)
+    plt.legend(labels)
+
+    if save:
+        plt.savefig(save, bbox_inches="tight")
 
 
 class GenerateTestPlots:
