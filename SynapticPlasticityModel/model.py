@@ -2,7 +2,7 @@ import random
 import numpy as np
 from tqdm import tqdm
 
-from SynapticPlasticityModel.utils import gaussian, gaussian_normalised
+from utils import gaussian, gaussian_normalised
 
 def run_td_model(
         data_id="PL",
