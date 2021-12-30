@@ -1297,7 +1297,7 @@ class GenerateTestPlots:
         MetaRLModel = MetaRLModel(
             ActorCriticLSTM(),
             TestingEnvironment(reward_width=0.3),
-            np.load("helper_files/PL-NAc-Activity.npz"),
+            np.load("recorded_data/PL-NAc-Activity.npz"),
         )
 
         actor_weights = MetaRLModel.load_weights(

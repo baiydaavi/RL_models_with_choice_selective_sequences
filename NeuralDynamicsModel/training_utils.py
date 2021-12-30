@@ -1,8 +1,5 @@
 """This module defines utility functions for training."""
-
-
 import tensorflow as tf
-
 
 def get_expected_return(
         rewards: tf.Tensor,
@@ -29,7 +26,6 @@ def get_expected_return(
     returns = returns.stack()[::-1]
     return returns
 
-
 def compute_loss_policy(
         action_probs: tf.Tensor,
         probs: tf.Tensor,
@@ -42,7 +38,6 @@ def compute_loss_policy(
     entropy_loss = - tf.math.reduce_sum(probs * tf.math.log(probs))
 
     return policy_loss - entropy_coef * entropy_loss
-
 
 def compute_loss_value(
         values: tf.Tensor,

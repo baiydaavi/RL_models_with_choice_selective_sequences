@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # Choice-selective input activity
     choice_selective_activity = np.load(
-        f"helper_files/{args.input_type}_activity.npz"
+        f"recorded_data/{args.input_type}_activity.npz"
     )
 
     # Meta RL Model
