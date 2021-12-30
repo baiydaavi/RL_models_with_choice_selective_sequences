@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument('--run_id', type=int, default=0,
                         help='id of the current test run')
     parser.add_argument('--saved_model_path', type=str,
-                        default='best_model/model-62000',
+                        default='saved_model/model-62000',
                         help='path of the saved model')
     args = parser.parse_args()
 

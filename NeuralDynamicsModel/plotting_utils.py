@@ -1301,7 +1301,7 @@ class GenerateTestPlots:
         )
 
         actor_weights = MetaRLModel.load_weights(
-            load_model="best_model/model-62000")["ActorOutput"]
+            load_model="saved_model/model-62000")["ActorOutput"]
 
         lstm_state = self.actor_hs[self.current_trial_times == 2, :]
 
