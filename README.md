@@ -23,9 +23,7 @@ You are now ready to run all the python scripts. Remember to install Jupyter Not
 * To generate the plots from the paper using the saved Neural Dynamics model, run the ```plots.ipynb``` notebook located in the NeuralDynamicsModel folder.
 
 * To train the Neural Dynamics model from scratch using the default parameters, run the following command:
-
     ```python train.py```
 
 * To generate testing data for the Neural Dynamics model using the default parameters, run the following command:
-
     ```python test.py```
