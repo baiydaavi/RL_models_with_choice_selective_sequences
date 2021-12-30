@@ -138,7 +138,6 @@ dmypy.json
 /training_helper.py
 /NeuralDynamicsModel/testing_data/
 /NeuralDynamicsModel/test_plots/
-/NeuralDynamicsModel/run_test.py
 /SynapticPlasticityModel/scratch.ipynb
 /SynapticPlasticityModel/scratch.py
 /SynapticPlasticityModel/recorded_data/
