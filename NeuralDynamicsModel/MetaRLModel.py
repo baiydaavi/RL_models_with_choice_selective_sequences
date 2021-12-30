@@ -1,14 +1,11 @@
 """This module defines the meta reinforcement learning model."""
-
-import tensorflow as tf
-import numpy as np
 import os
 import tqdm
+import numpy as np
+import tensorflow as tf
 
 from training_utils import get_expected_return, compute_loss_policy, \
     compute_loss_value
-from utils import create_gif, make_gif
-
 
 class MetaRLModel:
     """Meta-RL model"""
@@ -18,11 +15,12 @@ class MetaRLModel:
             model,
             env,
             choice_selective_activity,
+            input_type='sequential',
             num_actions=3,
             num_states=42,
             num_hidden_units=128,
             gamma=0.96,
-            max_episodes=80001,
+            max_episodes=70001,
             max_steps_per_episode=630,
             learning_rate=0.001,
     ):
@@ -44,9 +42,16 @@ class MetaRLModel:
         self.left_choice_activity = self.choice_selective_activity['left']
         self.right_choice_activity = self.choice_selective_activity['right']
 
-        self.model_path, self.frame_path = self.training_saver()
+        # create the directories
+        self.input_type = input_type
+        self.model_path = f"training_data/" \
+                          f"{self.input_type}_in" \
+                          f"put/learning_rate=" \
+                          f"{self.learning_rate}_hidden_units=" \
+                          f"{self.num_hidden_units}/model_checkpoints/"
+        os.makedirs(self.model_path, exist_ok=True)
 
-    def learn(self, load_model=None):
+    def train(self, load_model=None):
 
         if load_model:
             self.model.load_weights(load_model)
@@ -110,15 +115,6 @@ class MetaRLModel:
                     self.model.save_weights(
                         self.model_path + '/model-' + str(
                             episode) + '/model-' + str(episode))
-
-                    episode_frames = [rewards.numpy(), rew_probs.numpy(),
-                                      actions.numpy(),
-                                      current_episode_times.numpy()]
-                    img_list = create_gif(episode_frames)
-                    ep_type = "/train_"
-                    make_gif(img_list,
-                             self.frame_path + ep_type + str(episode) + '.gif',
-                             duration=len(img_list) * 0.1, true_image=True)
 
     def train_episode(
             self,
@@ -240,15 +236,61 @@ class MetaRLModel:
                current_episode_times, rew_probs, rewards, gammas, \
                values, rpes
 
-    def test(self, run_id=0, load_model=None,
-             block_type='default', mode='default',
-             fraction_stimulated=0.6, stimulation_level=0.15):
+    @tf.function
+    def train_step(
+            self,
+            critic_obs: tf.Tensor,
+            actor_obs: tf.Tensor,
+            actions: tf.Tensor,
+            returns: tf.Tensor,
+            advantages: tf.Tensor,
+            initial_state: tf.Tensor) -> tf.Tensor:
+        """Runs a model training step."""
+
+        critic_obs = tf.expand_dims(critic_obs, 0)
+        actor_obs = tf.expand_dims(actor_obs, 0)
+
+        with tf.GradientTape() as tape:
+            logits, values, _, _, _, _, _ = self.model(critic_obs, actor_obs,
+                                                       initial_state,
+                                                       initial_state)
+
+            logits = tf.squeeze(logits)
+            values = tf.squeeze(values)
+
+            probs = tf.nn.softmax(logits)
+            action_probs = tf.TensorArray(dtype=tf.float32, size=0,
+                                          dynamic_size=True)
+            for item in tf.range(len(actions)):
+                action_probs = action_probs.write(item,
+                                                  probs[item, actions[item]])
+            action_probs = action_probs.stack()
+
+            # Convert training data to appropriate TF tensor shapes
+            action_probs, values, returns, advantages = [
+                tf.expand_dims(x, 1) for x in
+                [action_probs, values, returns, advantages]]
+
+            # Calculating loss values to update our network
+            loss = compute_loss_policy(action_probs, probs,
+                                       advantages) + compute_loss_value(values,
+                                                                        returns)
+
+        # Compute the gradients from the loss
+        grads = tape.gradient(loss, self.model.trainable_variables)
+        grads, grad_norms = tf.clip_by_global_norm(grads, 999.0)
+
+        # Apply the gradients to the model's parameters
+        self.optimizer.apply_gradients(
+            zip(grads, self.model.trainable_variables))
+
+        return loss
+
+    def test(self, save_destination_folder, run_id=0, load_model=None,
+             fraction_stimulated=0.7, stimulation_level=0.15):
         """Run model test."""
 
-        save_destination_folder = f"testing_data/block_type-{block_type}/" \
-                                  f"mode-{mode}/"
-
-        os.makedirs(save_destination_folder, exist_ok = True)
+        os.makedirs(save_destination_folder, exist_ok=True)
 
         file_save_id = f"test_{run_id}.npz"
 
@@ -335,7 +377,7 @@ class MetaRLModel:
             in_critic_obs,
             in_actor_obs,
             initial_state,
-            fraction_stimulated=0.6,
+            fraction_stimulated=0.7,
             stimulation_level=0.15,
     ):
         """Runs a single episode to collect training data."""
@@ -499,56 +541,6 @@ class MetaRLModel:
             is_stimulateds,
         )
 
-    @tf.function
-    def train_step(
-            self,
-            critic_obs: tf.Tensor,
-            actor_obs: tf.Tensor,
-            actions: tf.Tensor,
-            returns: tf.Tensor,
-            advantages: tf.Tensor,
-            initial_state: tf.Tensor) -> tf.Tensor:
-        """Runs a model training step."""
-
-        critic_obs = tf.expand_dims(critic_obs, 0)
-        actor_obs = tf.expand_dims(actor_obs, 0)
-
-        with tf.GradientTape() as tape:
-            logits, values, _, _, _, _, _ = self.model(critic_obs, actor_obs,
-                                                       initial_state,
-                                                       initial_state)
-
-            logits = tf.squeeze(logits)
-            values = tf.squeeze(values)
-
-            probs = tf.nn.softmax(logits)
-            action_probs = tf.TensorArray(dtype=tf.float32, size=0,
-                                          dynamic_size=True)
-            for item in tf.range(len(actions)):
-                action_probs = action_probs.write(item,
-                                                  probs[item, actions[item]])
-            action_probs = action_probs.stack()
-
-            # Convert training data to appropriate TF tensor shapes
-            action_probs, values, returns, advantages = [
-                tf.expand_dims(x, 1) for x in
-                [action_probs, values, returns, advantages]]
-
-            # Calculating loss values to update our network
-            loss = compute_loss_policy(action_probs, probs,
-                                       advantages) + compute_loss_value(values,
-                                                                        returns)
-
-        # Compute the gradients from the loss
-        grads = tape.gradient(loss, self.model.trainable_variables)
-        grads, grad_norms = tf.clip_by_global_norm(grads, 999.0)
-
-        # Apply the gradients to the model's parameters
-        self.optimizer.apply_gradients(
-            zip(grads, self.model.trainable_variables))
-
-        return loss
-
     def load_weights(self, load_model=None):
         if load_model:
             self.model.load_weights(load_model)
@@ -594,17 +586,3 @@ class MetaRLModel:
                 'ActorLSTM': self.model.actor_LSTM.get_weights(),
                 'CriticOutput': self.model.critic.get_weights(),
                 'CriticLSTM': self.model.critic_LSTM.get_weights()}
-
-    def training_saver(self):
-
-        dir_name = f'training_data/learning_rate={self.learning_rate}' \
-                   f'_hidden_units={self.num_hidden_units}'
-
-        model_path = dir_name + '/model'
-        frame_path = dir_name + '/frames'
-
-        # create the directories
-        os.makedirs(model_path, exist_ok=True)
-        os.makedirs(frame_path, exist_ok=True)
-
-        return model_path, frame_path
