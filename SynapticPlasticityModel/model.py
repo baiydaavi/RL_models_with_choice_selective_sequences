@@ -1,31 +1,58 @@
+"""This module defines the synaptic plasticity model."""
 import random
 import numpy as np
 from tqdm import tqdm
 
 from utils import gaussian, gaussian_normalised
 
-def run_td_model(
-        data_id="PL",
-        activity_type="sequential",
-        num_trials=50000,
-        elig_time=0.8,
-        discount_time=0.7,
-        learning_rate=0.009,
-        stay_bias=0.15,
-        temperature=7000.0,
-        frac_decision_neuron=21,
-        is_stimulated=False,
-        fraction_stimulated=0.7,
-        stimulation_level=0.2,
-        start_time=-3.0,
-        end_time=3.0,
-        step_time=0.01,
-        synaptic_delay_time=0.01,
-        reward_offset=0.2,
-        seed=4,
-        save_NAc_activity=False
-):
 
+def run_td_model(
+    data_id="PL",
+    activity_type="sequential",
+    num_trials=50000,
+    elig_time=0.8,
+    discount_time=0.7,
+    learning_rate=0.009,
+    stay_bias=0.15,
+    temperature=7000.0,
+    frac_decision_neuron=21,
+    is_stimulated=False,
+    fraction_stimulated=0.7,
+    stimulation_level=0.2,
+    start_time=-3.0,
+    end_time=3.0,
+    step_time=0.01,
+    synaptic_delay_time=0.01,
+    reward_offset=0.2,
+    seed=4,
+    save_NAc_activity=False,
+):
+    """Run the synaptic plasticity model.
+
+    Args:
+        data_id (str, optional): Argument to choose PL or Thal data. Defaults to "PL".
+        activity_type (str, optional): Argument to choose activity type. Defaults to "sequential".
+        num_trials (int, optional): Number of trials. Defaults to 50000.
+        elig_time (float, optional): Timescale of synaptic eligibility. Defaults to 0.8.
+        discount_time (float, optional): Discounting timescale. Defaults to 0.7.
+        learning_rate (float, optional): Learning rate. Defaults to 0.009.
+        stay_bias (float, optional): Stay bias for softmax function. Defaults to 0.15.
+        temperature (float, optional): Temperature parameter for softmax function. Defaults to 7000.0.
+        frac_decision_neuron (int, optional): Fraction of early neurons to use for decision. Defaults to 21.
+        is_stimulated (bool, optional): Argument to choose if the trial is stimulated. Defaults to False.
+        fraction_stimulated (float, optional): Fraction of stimulated neurons. Defaults to 0.7.
+        stimulation_level (float, optional): Level of stimulation. Defaults to 0.2.
+        start_time (float, optional): Time of start of a trial. Defaults to -3.0.
+        end_time (float, optional): Time of end of a trial. Defaults to 3.0.
+        step_time (float, optional): Time step. Defaults to 0.01.
+        synaptic_delay_time (float, optional): Synaptic delay time. Defaults to 0.01.
+        reward_offset (float, optional): Reward offset. Defaults to 0.2.
+        seed (int, optional): Seed. Defaults to 4.
+        save_NAc_activity (bool, optional): Argument to save NAc activity. Defaults to False.
+
+    Returns:
+        dict: Behavior data, value signal, RPE signal, NAc activity generated during the run.
+    """
     choice_activity = np.load(f"recorded_data/{data_id}_{activity_type}.npz")
     left_choice_activity = choice_activity["left_choice_activity"]
     right_choice_activity = choice_activity["right_choice_activity"]
@@ -41,9 +68,7 @@ def run_td_model(
     # eligibility trace decay rate (0.9 = 0.6 s), (0.99 = 6s)
     lamb_decay = np.exp(-step_time / elig_time)
 
-    discount_factor = np.exp(
-        -synaptic_delay_time / discount_time
-    )  # temporal discounting
+    discount_factor = np.exp(-synaptic_delay_time / discount_time)  # temporal discounting
 
     gauss_width = 0.3
 
@@ -76,8 +101,7 @@ def run_td_model(
 
     np.random.seed(seed)
     peak_reward_times = [
-        np.random.randint(reward_start_time, reward_end_time) for _ in
-        range(num_trials)
+        np.random.randint(reward_start_time, reward_end_time) for _ in range(num_trials)
     ]
 
     # define the reward time for the non-variable delay case (rewarded at 1 s
@@ -170,23 +194,20 @@ def run_td_model(
 
         # update the decision vector for right choice to use for next trial
         right_decision_value[current_trial] = np.matmul(
-            right_weights[current_trial - 1,
-            0: num_neurons // frac_decision_neuron],
+            right_weights[current_trial - 1, 0 : num_neurons // frac_decision_neuron],
             np.mean(
                 back_noise[
-                num_left_neurons: num_left_neurons
-                                  + num_neurons // frac_decision_neuron,
-                0:5,
+                    num_left_neurons : num_left_neurons
+                    + num_neurons // frac_decision_neuron,
+                    0:5,
                 ],
                 axis=1,
             ),
         )
         # update the decision vector for left
         left_decision_value[current_trial] = np.matmul(
-            left_weights[current_trial - 1,
-            0: num_neurons // frac_decision_neuron],
-            np.mean(back_noise[0: num_neurons // frac_decision_neuron, 0:5],
-                    axis=1),
+            left_weights[current_trial - 1, 0 : num_neurons // frac_decision_neuron],
+            np.mean(back_noise[0 : num_neurons // frac_decision_neuron, 0:5], axis=1),
         )
 
         # calculate the probability to choose left or right
@@ -211,12 +232,10 @@ def run_td_model(
         # Determines if there should be a block switch
         if reward_count_in_blocks > 9 and np.random.randint(10) < 4:
             reward_count_in_blocks = 0
-            high_prob_blocks[current_trial] = high_prob_blocks[
-                                                  current_trial - 1] * -1
+            high_prob_blocks[current_trial] = high_prob_blocks[current_trial - 1] * -1
             trial_count_in_blocks = 1
         else:
-            high_prob_blocks[current_trial] = high_prob_blocks[
-                current_trial - 1]
+            high_prob_blocks[current_trial] = high_prob_blocks[current_trial - 1]
             trial_count_in_blocks += 1
 
         # determine whether reward was received
@@ -247,45 +266,39 @@ def run_td_model(
 
         if choices[current_trial] == 1:  # left choice
             current_trial_activity = left_choice_activity[
-                                     np.random.randint(
-                                         left_choice_activity.shape[0]), :, :
-                                     ].copy()
+                np.random.randint(left_choice_activity.shape[0]), :, :
+            ].copy()
         else:
             current_trial_activity = right_choice_activity[
-                                     np.random.randint(
-                                         right_choice_activity.shape[0]), :, :
-                                     ].copy()
+                np.random.randint(right_choice_activity.shape[0]), :, :
+            ].copy()
 
         if is_stimulated:
             chr_nrn_list = random.sample(
                 num_nrn_list.copy(),
-                int(fraction_stimulated * (
-                            num_left_neurons + num_right_neurons)),
+                int(fraction_stimulated * (num_left_neurons + num_right_neurons)),
             )
             chr_nrn_list = np.sort(chr_nrn_list)
 
             if stimulated_trials[current_trial] == 1:
                 current_trial_activity[chr_nrn_list, :] = stimulation_level
 
-        eligibility_traces = np.zeros(
-            (num_right_neurons + num_left_neurons, len(times))
-        )
+        eligibility_traces = np.zeros((num_right_neurons + num_left_neurons, len(times)))
 
         # define a temporary vector to update weights through time for a
         # given trial
         temporary_weights = np.concatenate(
-            [left_weights[current_trial - 1, :],
-             right_weights[current_trial - 1, :]]
+            [left_weights[current_trial - 1, :], right_weights[current_trial - 1, :]]
         )
 
         for current_time_step in np.arange(
-                nose_poke_times[current_trial], len(times) - 1
+            nose_poke_times[current_trial], len(times) - 1
         ):
             eligibility_traces[:, current_time_step] = (
-                    use_synaptic_eligibility
-                    * eligibility_traces[:, current_time_step - 1]
-                    * lamb_decay
-                    + step_time * current_trial_activity[:, current_time_step]
+                use_synaptic_eligibility
+                * eligibility_traces[:, current_time_step - 1]
+                * lamb_decay
+                + step_time * current_trial_activity[:, current_time_step]
             )
 
             # calculate the right values function at the current time step
@@ -297,37 +310,33 @@ def run_td_model(
                 # calculate right choice NAc firing for time step j using the
                 # updated weights
                 NAcs[current_trial, :, current_time_step] = np.multiply(
-                    temporary_weights,
-                    current_trial_activity[:, current_time_step])
+                    temporary_weights, current_trial_activity[:, current_time_step]
+                )
 
             # Calculate prediction error
             RPE = (
-                    rewards[current_time_step]
-                    + (
-                            discount_factor * values[
-                        current_trial, current_time_step]
-                            - values[
-                                current_trial, current_time_step -
-                                synaptic_delay_steps]
-                    )
-                    / synaptic_delay_time
+                rewards[current_time_step]
+                + (
+                    discount_factor * values[current_trial, current_time_step]
+                    - values[current_trial, current_time_step - synaptic_delay_steps]
+                )
+                / synaptic_delay_time
             )
             RPEs[current_trial, current_time_step] = RPE
 
             # update the weights for the current time step
             temporary_weights = (
-                    temporary_weights
-                    + step_time
-                    * learning_rate
-                    * RPE
-                    * eligibility_traces[:, current_time_step]
+                temporary_weights
+                + step_time
+                * learning_rate
+                * RPE
+                * eligibility_traces[:, current_time_step]
             )
             temporary_weights[temporary_weights < 0] = 0
 
         # keep the final updated weights to use for the next trial
         left_weights[current_trial, :] = temporary_weights[0:num_left_neurons]
-        right_weights[current_trial, :] = temporary_weights[
-                                          num_left_neurons:None]
+        right_weights[current_trial, :] = temporary_weights[num_left_neurons:None]
 
     return {
         "times": times,
@@ -342,12 +351,20 @@ def run_td_model(
         "left_decision_value": left_decision_value,
         "peak_reward_times": peak_reward_times,
         "step_time": step_time,
-        "NAc_activity": NAcs if save_NAc_activity else 'not_available'
+        "NAc_activity": NAcs if save_NAc_activity else "not_available",
     }
 
 
 def choose_stimulated_trials(stimulated_trials, fraction_trials_stimulated=0.1):
-    stimulated_trials[
-    0: int(fraction_trials_stimulated * len(stimulated_trials))] = 1
+    """Choose the trials to be stimulated.
+
+    Args:
+        stimulated_trials (list): List of trials.
+        fraction_trials_stimulated (float, optional): Fraction of trials stimulated. Defaults to 0.1.
+
+    Returns:
+        list: list of stimulated trials.
+    """
+    stimulated_trials[0 : int(fraction_trials_stimulated * len(stimulated_trials))] = 1
     stimulated_trials = np.random.permutation(stimulated_trials)
     return stimulated_trials
