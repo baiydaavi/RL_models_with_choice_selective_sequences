@@ -87,9 +87,7 @@ class MetaRLModel:
                 initial_actor_obs = tf.concat(
                     [
                         tf.one_hot(initial_action, self.num_actions, dtype=tf.float32),
-                        tf.one_hot(
-                            initial_obs_state, self.num_states, dtype=tf.float32
-                        ),
+                        tf.one_hot(initial_obs_state, self.num_states, dtype=tf.float32),
                         [0.0],
                         [self.gamma],
                     ],
@@ -167,9 +165,7 @@ class MetaRLModel:
         actor_obs_seq = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
         actions = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
         rew_probs = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
-        current_episode_times = tf.TensorArray(
-            dtype=tf.int32, size=0, dynamic_size=True
-        )
+        current_episode_times = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
         rewards = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
         values = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
         rpes = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
@@ -335,8 +331,7 @@ class MetaRLModel:
 
             # Convert training data to appropriate TF tensor shapes
             action_probs, values, returns, advantages = [
-                tf.expand_dims(x, 1)
-                for x in [action_probs, values, returns, advantages]
+                tf.expand_dims(x, 1) for x in [action_probs, values, returns, advantages]
             ]
 
             # Calculating loss values to update our network
