@@ -14,59 +14,37 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
 
-def plot_model_performances(input_types=['sequential', 'persistent',],
-                            labels=['choice-selective \nPL-NAc activity',
-                                    'choice-selective \npersistent activity',],
-                            episodes=np.arange(10000, 72000, 2000),
-                            learning_rate=0.001,
-                            num_hidden_units=128,
-                            save=None):
-    performance_results = {input_type: [] for input_type in input_types}
-
-    fig = plt.figure(figsize=(10, 6))
-
-    for input_type in input_types:
-        test_destination = (
-            f"training_data/{input_type}_input/learning_rate="
-            f"{learning_rate}_hidden_units={num_hidden_units}/"
-            f"model_performances/"
-        )
-        for episode in episodes:
-            testing_file = test_destination + f"/model-{episode}/" + \
-                           "test_0.npz"
-            testing_data = np.load(testing_file)
-            is_rewardeds = testing_data['is_rewardeds']
-            current_trial_times = testing_data['current_trial_times']
-            rewarded_trials = is_rewardeds[current_trial_times == 2]
-            performance_results[input_type].append(np.mean(rewarded_trials))
-        plt.plot(episodes, performance_results[input_type], label=input_type)
-
-    plt.xlabel("episodes")
-    plt.ylabel("reward rate")
-    plt.axhline(y=0.4, linestyle="dotted", color="k")
-    plt.ylim(0, 0.6)
-    plt.legend(labels)
-
-    if save:
-        plt.savefig(save, bbox_inches="tight")
-
-
 class GenerateTestPlots:
-    # Initializing the class
+    """Generates plots using data collected during testing."""
+
     def __init__(
-            self,
-            block_type='default',
-            mode='default',
-            num_actions=3,
-            num_states=42,
-            num_hidden_units=128,
-            gamma=0.96,
+        self,
+        block_type="default",
+        mode="default",
+        num_actions=3,
+        num_states=42,
+        num_hidden_units=128,
+        gamma=0.96,
     ):
+        """Initialize the plot generator.
+
+        Args:
+            block_type (str, optional): [description]. Argument stating if block length
+            is fixed or not. Defaults to "default".
+            mode (str, optional): Argument stating if the trials can be stimulated.
+            Defaults to "default".
+            num_actions (int, optional): Number of allowed actions. Defaults to 3.
+            num_states (int, optional): Number of states. Defaults to 42.
+            num_hidden_units (int, optional): Number of hidden units of the LSTMS.
+            Defaults to 128.
+            gamma (float, optional): Discount factor. Defaults to 0.96.
+        """
 
         testing_data_path = f"testing_data/block_type-{block_type}/mode-{mode}/"
 
-        testing_files = [f for f in
-                         glob.glob(testing_data_path + "*.npz", recursive=True)]
+        testing_files = [
+            f for f in glob.glob(testing_data_path + "*.npz", recursive=True)
+        ]
 
         self.current_trial_times = []
         self.trial_count_in_blocks = []
@@ -84,29 +62,26 @@ class GenerateTestPlots:
         self.actor_cs = []
         self.is_stimulateds = []
 
-        for file in tqdm.tqdm(testing_files):  # [:3]
+        for file in tqdm.tqdm(testing_files):
             testing_data = np.load(file)
-            self.current_trial_times.append(testing_data['current_trial_times'])
-            self.trial_count_in_blocks.append(
-                testing_data['trial_count_in_blocks'])
-            self.actions.append(testing_data['actions'])
-            self.choices.append(testing_data['choices'])
-            self.actor_logits.append(np.float32(testing_data['actor_logits']))
-            self.reward_probs.append(np.float32(testing_data['reward_probs']))
-            self.rewards.append(np.float32(testing_data['rewards']))
-            self.is_rewardeds.append(testing_data['is_rewardeds'])
-            self.values.append(np.float32(testing_data['values']))
-            self.rpes.append(np.float32(testing_data['rpes']))
-            self.critic_hs.append(np.float32(testing_data['critic_hs']))
-            self.critic_cs.append(np.float32(testing_data['critic_cs']))
-            self.actor_hs.append(np.float32(testing_data['actor_hs']))
-            self.actor_cs.append(np.float32(testing_data['actor_cs']))
-            self.is_stimulateds.append(testing_data['is_stimulateds'])
+            self.current_trial_times.append(testing_data["current_trial_times"])
+            self.trial_count_in_blocks.append(testing_data["trial_count_in_blocks"])
+            self.actions.append(testing_data["actions"])
+            self.choices.append(testing_data["choices"])
+            self.actor_logits.append(np.float32(testing_data["actor_logits"]))
+            self.reward_probs.append(np.float32(testing_data["reward_probs"]))
+            self.rewards.append(np.float32(testing_data["rewards"]))
+            self.is_rewardeds.append(testing_data["is_rewardeds"])
+            self.values.append(np.float32(testing_data["values"]))
+            self.rpes.append(np.float32(testing_data["rpes"]))
+            self.critic_hs.append(np.float32(testing_data["critic_hs"]))
+            self.critic_cs.append(np.float32(testing_data["critic_cs"]))
+            self.actor_hs.append(np.float32(testing_data["actor_hs"]))
+            self.actor_cs.append(np.float32(testing_data["actor_cs"]))
+            self.is_stimulateds.append(testing_data["is_stimulateds"])
 
-        self.current_trial_times = np.array(self.current_trial_times).reshape(
-            -1)
-        self.trial_count_in_blocks = np.array(
-            self.trial_count_in_blocks).reshape(-1)
+        self.current_trial_times = np.array(self.current_trial_times).reshape(-1)
+        self.trial_count_in_blocks = np.array(self.trial_count_in_blocks).reshape(-1)
         self.actions = np.array(self.actions).reshape(-1)
         self.choices = np.array(self.choices).reshape(-1)
         self.actor_logits = np.array(self.actor_logits).reshape(-1, num_actions)
@@ -124,19 +99,12 @@ class GenerateTestPlots:
         self.num_hidden_units = num_hidden_units
         self.gamma = gamma
 
-    ####################################
-    # pca activity plot
-
-    ####################################
-    # Behavior plot
-
-    def behavior(
-            self, start_num_trials=500, num_tr=200, save=None
-    ):
+    def behavior(self, start_num_trials=500, num_tr=200, save=None):
 
         print(
             f"reward rate = "
-            f"{np.mean(self.is_rewardeds[self.current_trial_times == 1])}")
+            f"{np.mean(self.is_rewardeds[self.current_trial_times == 1])}"
+        )
 
         end_num_trials = start_num_trials + num_tr
 
@@ -144,17 +112,17 @@ class GenerateTestPlots:
         rewarded_trials = self.is_rewardeds[self.current_trial_times == 2]
         chosen_side = 2 * self.choices[self.current_trial_times == 2] - 1
         rew_side = chosen_side * rewarded_trials
-        logits = self.actor_logits[:, 2][self.current_trial_times == 1] - \
-                 self.actor_logits[:, 1][self.current_trial_times == 1]
+        logits = (
+            self.actor_logits[:, 2][self.current_trial_times == 1]
+            - self.actor_logits[:, 1][self.current_trial_times == 1]
+        )
         logits = np.roll(logits, 1)
-        max_logit, mid_logit = np.max(logits), (
-                np.max(logits) + np.min(logits)) / 2
+        max_logit, mid_logit = np.max(logits), (np.max(logits) + np.min(logits)) / 2
 
         plt.figure(figsize=(16, 5))
         plt.scatter(
             np.arange(start_num_trials, end_num_trials),
-            high_prob[start_num_trials:end_num_trials] * (
-                    max_logit - mid_logit) * 1.5
+            high_prob[start_num_trials:end_num_trials] * (max_logit - mid_logit) * 1.5
             + mid_logit,
             s=40,
             color="black",
@@ -162,8 +130,7 @@ class GenerateTestPlots:
         )
         plt.scatter(
             np.arange(start_num_trials, end_num_trials),
-            chosen_side[start_num_trials:end_num_trials] * (
-                    max_logit - mid_logit) * 1.3
+            chosen_side[start_num_trials:end_num_trials] * (max_logit - mid_logit) * 1.3
             + mid_logit,
             s=20,
             color="blue",
@@ -171,8 +138,7 @@ class GenerateTestPlots:
         )
         plt.scatter(
             np.arange(start_num_trials, end_num_trials),
-            rew_side[start_num_trials:end_num_trials] * (
-                    max_logit - mid_logit) * 1.1
+            rew_side[start_num_trials:end_num_trials] * (max_logit - mid_logit) * 1.1
             + mid_logit,
             s=30 * np.abs(rew_side[start_num_trials:end_num_trials]),
             color="green",
@@ -200,11 +166,8 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    ####################################
-    # Stay probability plot
-
     def stay_probability(self, mode=None, save=None):
-        if mode == 'optogenetic':
+        if mode == "optogenetic":
 
             rewarded_trials = self.is_rewardeds[self.current_trial_times == 2]
             chosen_side = 2 * self.choices[self.current_trial_times == 2] - 1
@@ -218,12 +181,11 @@ class GenerateTestPlots:
             norm_rewarded_trials = rewarded_trials[next_id == 0]
             norm_unrewarded_trials = unrewarded_trials[next_id == 0]
             norm_return_rew = norm_rewarded_trials * (
-                    (norm_next_choice == norm_chosen_side) * 1
+                (norm_next_choice == norm_chosen_side) * 1
             )
-            norm_prob_rew_return = np.sum(norm_return_rew) / np.sum(
-                norm_rewarded_trials)
+            norm_prob_rew_return = np.sum(norm_return_rew) / np.sum(norm_rewarded_trials)
             norm_return_unrew = norm_unrewarded_trials * (
-                    (norm_next_choice == norm_chosen_side) * 1
+                (norm_next_choice == norm_chosen_side) * 1
             )
             norm_prob_unrew_return = np.sum(norm_return_unrew) / np.sum(
                 norm_unrewarded_trials
@@ -234,12 +196,11 @@ class GenerateTestPlots:
             opto_rewarded_trials = rewarded_trials[next_id == 1]
             opto_unrewarded_trials = unrewarded_trials[next_id == 1]
             opto_return_rew = opto_rewarded_trials * (
-                    (opto_next_choice == opto_chosen_side) * 1
+                (opto_next_choice == opto_chosen_side) * 1
             )
-            opto_prob_rew_return = np.sum(opto_return_rew) / np.sum(
-                opto_rewarded_trials)
+            opto_prob_rew_return = np.sum(opto_return_rew) / np.sum(opto_rewarded_trials)
             opto_return_unrew = opto_unrewarded_trials * (
-                    (opto_next_choice == opto_chosen_side) * 1
+                (opto_next_choice == opto_chosen_side) * 1
             )
             opto_prob_unrew_return = np.sum(opto_return_unrew) / np.sum(
                 opto_unrewarded_trials
@@ -258,8 +219,9 @@ class GenerateTestPlots:
                 width=0.6,
                 color=["k", "aqua", "k", "aqua"],
             )
-            plt.xticks([1.5, 4.5],
-                       ["current trial\n reward", "current trial\n no reward"])
+            plt.xticks(
+                [1.5, 4.5], ["current trial\n reward", "current trial\n no reward"]
+            )
             plt.ylim([0.2, 1.05])
             plt.ylabel("probability of return")
 
@@ -277,12 +239,11 @@ class GenerateTestPlots:
             norm_rewarded_trials = rewarded_trials[next_id == 0]
             norm_unrewarded_trials = unrewarded_trials[next_id == 0]
             norm_return_rew = norm_rewarded_trials * (
-                    (norm_next_choice == norm_chosen_side) * 1
+                (norm_next_choice == norm_chosen_side) * 1
             )
-            norm_prob_rew_return += np.sum(norm_return_rew) / np.sum(
-                norm_rewarded_trials)
+            norm_prob_rew_return += np.sum(norm_return_rew) / np.sum(norm_rewarded_trials)
             norm_return_unrew = norm_unrewarded_trials * (
-                    (norm_next_choice == norm_chosen_side) * 1
+                (norm_next_choice == norm_chosen_side) * 1
             )
             norm_prob_unrew_return += np.sum(norm_return_unrew) / np.sum(
                 norm_unrewarded_trials
@@ -293,12 +254,11 @@ class GenerateTestPlots:
             opto_rewarded_trials = rewarded_trials[next_id == 1]
             opto_unrewarded_trials = unrewarded_trials[next_id == 1]
             opto_return_rew = opto_rewarded_trials * (
-                    (opto_next_choice == opto_chosen_side) * 1
+                (opto_next_choice == opto_chosen_side) * 1
             )
-            opto_prob_rew_return += np.sum(opto_return_rew) / np.sum(
-                opto_rewarded_trials)
+            opto_prob_rew_return += np.sum(opto_return_rew) / np.sum(opto_rewarded_trials)
             opto_return_unrew = opto_unrewarded_trials * (
-                    (opto_next_choice == opto_chosen_side) * 1
+                (opto_next_choice == opto_chosen_side) * 1
             )
             opto_prob_unrew_return += np.sum(opto_return_unrew) / np.sum(
                 opto_unrewarded_trials
@@ -318,8 +278,7 @@ class GenerateTestPlots:
                 color=["k", "aqua", "k", "aqua"],
             )
             plt.xticks(
-                [1.5, 4.5],
-                ["previous trial\n reward", "previous trial\n no reward"]
+                [1.5, 4.5], ["previous trial\n reward", "previous trial\n no reward"]
             )
             plt.ylim([0.2, 1.05])
             plt.ylabel("probability of return")
@@ -335,10 +294,8 @@ class GenerateTestPlots:
             next_choice = np.roll(chosen_side, -1)
             return_rew = rewarded_trials * ((next_choice == chosen_side) * 1)
             prob_rew_return += np.sum(return_rew) / np.sum(rewarded_trials)
-            return_unrew = unrewarded_trials * (
-                    (next_choice == chosen_side) * 1)
-            prob_unrew_return += np.sum(return_unrew) / np.sum(
-                unrewarded_trials)
+            return_unrew = unrewarded_trials * ((next_choice == chosen_side) * 1)
+            prob_unrew_return += np.sum(return_unrew) / np.sum(unrewarded_trials)
 
             plt.subplot(1, 2, 1)
             plt.bar(
@@ -347,30 +304,26 @@ class GenerateTestPlots:
                 width=0.2,
                 color=["green", "red"],
             )
-            plt.xticks([1, 1.5],
-                       ["previously\n rewarded", "previously\n unrewarded"])
+            plt.xticks([1, 1.5], ["previously\n rewarded", "previously\n unrewarded"])
             plt.ylabel("probability of return")
             plt.ylim([0.0, 1.1])
 
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    ####################################
-    # reward regression plot
-
     def choice_regression(self, mode=None, trials_back=11, save=None):
 
-        if mode == 'optogenetic':
+        if mode == "optogenetic":
             rewarded_trials = self.is_rewardeds[
                 (self.current_trial_times == 2) & (self.choices != -1)
-                ]
+            ]
             chosen_side = (
-                    2 * self.choices[
-                (self.current_trial_times == 2) & (self.choices != -1)] - 1
+                2 * self.choices[(self.current_trial_times == 2) & (self.choices != -1)]
+                - 1
             )
             stim_trials = self.is_stimulateds[
                 (self.current_trial_times == 2) & (self.choices != -1)
-                ]
+            ]
 
             reward_mat = np.zeros((trials_back - 1, len(rewarded_trials)))
             reward_vect = chosen_side * rewarded_trials
@@ -408,20 +361,17 @@ class GenerateTestPlots:
 
             # Plots regression
             reward_coefs = log_reg.params[1:trials_back]
-            unreward_coefs = log_reg.params[
-                             trials_back: int(trials_back * 2 - 1)]
+            unreward_coefs = log_reg.params[trials_back : int(trials_back * 2 - 1)]
             rewlaser_coefs = log_reg.params[
-                             int(trials_back * 2 - 1): int(trials_back * 3 - 2)
-                             ]
+                int(trials_back * 2 - 1) : int(trials_back * 3 - 2)
+            ]
             norewlaser_coefs = log_reg.params[
-                               int(trials_back * 3 - 2): int(
-                                   trials_back * 4 - 3)
-                               ]
+                int(trials_back * 3 - 2) : int(trials_back * 4 - 3)
+            ]
 
             fig = plt.figure(figsize=(12, 6))
             plt.plot(reward_coefs, "b", label="rewarded trials no stimulation")
-            plt.plot(unreward_coefs, "r",
-                     label="unrewarded trials no stimulation")
+            plt.plot(unreward_coefs, "r", label="unrewarded trials no stimulation")
             plt.plot(
                 reward_coefs + rewlaser_coefs,
                 linestyle="dotted",
@@ -448,10 +398,10 @@ class GenerateTestPlots:
 
             rewarded_trials = self.is_rewardeds[
                 (self.current_trial_times == 2) & (self.choices != -1)
-                ]
+            ]
             chosen_side = (
-                    2 * self.choices[
-                (self.current_trial_times == 2) & (self.choices != -1)] - 1
+                2 * self.choices[(self.current_trial_times == 2) & (self.choices != -1)]
+                - 1
             )
 
             reward_mat = np.zeros((trials_back - 1, len(rewarded_trials)))
@@ -467,8 +417,7 @@ class GenerateTestPlots:
                 unreward_mat[i - 1, :] = np.roll(unreward_vec, i)
 
             y = chosen_side
-            x = np.concatenate((np.ones([1, len(y)]), reward_mat, unreward_mat),
-                               axis=0)
+            x = np.concatenate((np.ones([1, len(y)]), reward_mat, unreward_mat), axis=0)
 
             y_new = np.asarray((y + 1) / 2, dtype=int)
 
@@ -501,9 +450,6 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    ####################################
-    # value plot
-
     def block_value_plot(self, save=None):
 
         high_prob = self.reward_probs[(self.current_trial_times == 2)]
@@ -511,15 +457,14 @@ class GenerateTestPlots:
         chosen_side = 2 * self.choices[(self.current_trial_times == 2)] - 1
         value = np.array(
             [
-                self.values[
-                    (self.current_trial_times == (i + 1) % self.num_states)]
+                self.values[(self.current_trial_times == (i + 1) % self.num_states)]
                 for i in range(self.num_states)
             ]
         ).T
 
         switch_high = np.where(np.diff(high_prob) != 0)[0] + 1
 
-        early_trials = switch_high[0: len(switch_high) - 2]
+        early_trials = switch_high[0 : len(switch_high) - 2]
         late_trials = early_trials + 14  # switch_high[1:-1] - 1
         # middle_trials=(early_trials+late_trials)/2
         middle_trials = early_trials + 4
@@ -538,42 +483,40 @@ class GenerateTestPlots:
         # indeces for block and actual choice
         left_left_early = early_trials[
             (block_iden == 1) & (chosen_side[early_trials] == 1)
-            ]
+        ]
         left_right_early = early_trials[
             (block_iden == 1) & (chosen_side[early_trials] == -1)
-            ]
+        ]
         right_right_early = early_trials[
             (block_iden == -1) & (chosen_side[early_trials] == -1)
-            ]
+        ]
         right_left_early = early_trials[
             (block_iden == -1) & (chosen_side[early_trials] == 1)
-            ]
+        ]
 
         left_left_middle = middle_trials[
             (block_iden == 1) & (chosen_side[middle_trials] == 1)
-            ]
+        ]
         left_right_middle = middle_trials[
             (block_iden == 1) & (chosen_side[middle_trials] == -1)
-            ]
+        ]
         right_right_middle = middle_trials[
             (block_iden == -1) & (chosen_side[middle_trials] == -1)
-            ]
+        ]
         right_left_middle = middle_trials[
             (block_iden == -1) & (chosen_side[middle_trials] == 1)
-            ]
+        ]
 
-        left_left_late = late_trials[
-            (block_iden == 1) & (chosen_side[late_trials] == 1)
-            ]
+        left_left_late = late_trials[(block_iden == 1) & (chosen_side[late_trials] == 1)]
         left_right_late = late_trials[
             (block_iden == 1) & (chosen_side[late_trials] == -1)
-            ]
+        ]
         right_right_late = late_trials[
             (block_iden == -1) & (chosen_side[late_trials] == -1)
-            ]
+        ]
         right_left_late = late_trials[
             (block_iden == -1) & (chosen_side[late_trials] == 1)
-            ]
+        ]
 
         left_left_early_val = value[left_left_early, :]
         left_right_early_val = value[left_right_early, :]
@@ -604,12 +547,10 @@ class GenerateTestPlots:
         val_sem_l = stats.sem(left_left_early_val, axis=0)
         val_sem_r = stats.sem(left_right_early_val, axis=0)
         plt.errorbar(
-            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue",
-            linewidth=1.0
+            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue", linewidth=1.0
         )
         plt.errorbar(
-            t, val_trace_r, val_sem_r, color="green", ecolor="lime",
-            linewidth=1.0
+            t, val_trace_r, val_sem_r, color="green", ecolor="lime", linewidth=1.0
         )
         plt.ylim([y_lim_min, y_lim_max])
 
@@ -620,12 +561,10 @@ class GenerateTestPlots:
         val_sem_l = stats.sem(right_left_early_val, axis=0)
         val_sem_r = stats.sem(right_right_early_val, axis=0)
         plt.errorbar(
-            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue",
-            linewidth=1.0
+            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue", linewidth=1.0
         )
         plt.errorbar(
-            t, val_trace_r, val_sem_r, color="green", ecolor="lime",
-            linewidth=1.0
+            t, val_trace_r, val_sem_r, color="green", ecolor="lime", linewidth=1.0
         )
         plt.ylim([y_lim_min, y_lim_max])
         plt.text(4, y_lim_max / 2, "1st trial", fontsize=15, color="k")
@@ -636,12 +575,10 @@ class GenerateTestPlots:
         val_sem_l = stats.sem(left_left_middle_val, axis=0)
         val_sem_r = stats.sem(left_right_middle_val, axis=0)
         plt.errorbar(
-            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue",
-            linewidth=1.0
+            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue", linewidth=1.0
         )
         plt.errorbar(
-            t, val_trace_r, val_sem_r, color="green", ecolor="lime",
-            linewidth=1.0
+            t, val_trace_r, val_sem_r, color="green", ecolor="lime", linewidth=1.0
         )
         plt.ylim([y_lim_min, y_lim_max])
         plt.ylabel("Value", fontsize=15)
@@ -652,12 +589,10 @@ class GenerateTestPlots:
         val_sem_l = stats.sem(right_left_middle_val, axis=0)
         val_sem_r = stats.sem(right_right_middle_val, axis=0)
         plt.errorbar(
-            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue",
-            linewidth=1.0
+            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue", linewidth=1.0
         )
         plt.errorbar(
-            t, val_trace_r, val_sem_r, color="green", ecolor="lime",
-            linewidth=1.0
+            t, val_trace_r, val_sem_r, color="green", ecolor="lime", linewidth=1.0
         )
         plt.ylim([y_lim_min, y_lim_max])
         plt.text(4, y_lim_max / 2, "5th trial", fontsize=15, color="k")
@@ -671,12 +606,10 @@ class GenerateTestPlots:
         val_sem_l = stats.sem(left_left_late_val, axis=0)
         val_sem_r = stats.sem(left_right_late_val, axis=0)
         plt.errorbar(
-            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue",
-            linewidth=1.0
+            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue", linewidth=1.0
         )
         plt.errorbar(
-            t, val_trace_r, val_sem_r, color="green", ecolor="lime",
-            linewidth=1.0
+            t, val_trace_r, val_sem_r, color="green", ecolor="lime", linewidth=1.0
         )
         plt.ylim([y_lim_min, y_lim_max])
 
@@ -686,12 +619,10 @@ class GenerateTestPlots:
         val_sem_l = stats.sem(right_left_late_val, axis=0)
         val_sem_r = stats.sem(right_right_late_val, axis=0)
         plt.errorbar(
-            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue",
-            linewidth=1.0
+            t, val_trace_l, val_sem_l, color="blue", ecolor="skyblue", linewidth=1.0
         )
         plt.errorbar(
-            t, val_trace_r, val_sem_r, color="green", ecolor="lime",
-            linewidth=1.0
+            t, val_trace_r, val_sem_r, color="green", ecolor="lime", linewidth=1.0
         )
         plt.ylim([y_lim_min, y_lim_max])
         plt.text(4, y_lim_max / 2, "15th trial", fontsize=15, color="k")
@@ -708,8 +639,8 @@ class GenerateTestPlots:
         if plt_sec:
             y_vec_cs = np.mean(
                 np.array(
-                    [self.values[self.current_trial_times == i] for i in
-                     range(2, 7)]),
+                    [self.values[self.current_trial_times == i] for i in range(2, 7)]
+                ),
                 axis=0,
             )
         else:
@@ -717,8 +648,7 @@ class GenerateTestPlots:
                 np.array(
                     [
                         self.rpes[self.current_trial_times == i]
-                        for i in
-                        range(self.num_states // 2, self.num_states // 2 + 10)
+                        for i in range(self.num_states // 2, self.num_states // 2 + 10)
                     ]
                 ),
                 axis=0,
@@ -737,13 +667,11 @@ class GenerateTestPlots:
         plt.figure(figsize=(11, 4))
         if plt_sec:
             plt.suptitle(
-                "Regressing DA activity at beginning against outcome",
-                fontsize=20
+                "Regressing DA activity at beginning against outcome", fontsize=20
             )
         else:
             plt.suptitle(
-                "Regressing DA activity at reward time against outcome",
-                fontsize=20
+                "Regressing DA activity at reward time against outcome", fontsize=20
             )
 
         plt.scatter(np.arange(trials_back), results.params[1:None])
@@ -755,20 +683,17 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    ####################################
-    # block switch plot
-
     def block_switch(self, trial_back=10, save=None):
 
         high_prob = self.reward_probs[
-            (self.current_trial_times == 2) & (self.choices != -1)]
+            (self.current_trial_times == 2) & (self.choices != -1)
+        ]
         chosen_side = (
-                2 * self.choices[
-            (self.current_trial_times == 2) & (self.choices != -1)] - 1
+            2 * self.choices[(self.current_trial_times == 2) & (self.choices != -1)] - 1
         )
 
         switch_high = np.where(np.diff(high_prob) != 0)[0] + 1
-        early_trials = switch_high[0: len(switch_high) - 1]
+        early_trials = switch_high[0 : len(switch_high) - 1]
         block_iden = high_prob[early_trials]
 
         # finds times of left to right
@@ -825,9 +750,6 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    ####################################
-    # rpe rew vs unrew plot
-
     def rpe_plot(self, save=None):
 
         rpe_r = np.array(
@@ -837,7 +759,7 @@ class GenerateTestPlots:
                         (self.current_trial_times == (i + 2) % self.num_states)
                         & (self.choices != -1)
                         & (self.is_rewardeds == 1)
-                        ]
+                    ]
                 )
                 for i in range(self.num_states)
             ]
@@ -849,22 +771,24 @@ class GenerateTestPlots:
                         (self.current_trial_times == (i + 2) % self.num_states)
                         & (self.choices != -1)
                         & (self.is_rewardeds == 0)
-                        ]
+                    ]
                 )
                 for i in range(self.num_states)
             ]
         )
         val_r = np.mean(
             self.values[
-                (self.current_trial_times == 1) & (self.choices != -1) & (
-                        self.is_rewardeds == 1)
-                ]
+                (self.current_trial_times == 1)
+                & (self.choices != -1)
+                & (self.is_rewardeds == 1)
+            ]
         )
         val_ur = np.mean(
             self.values[
-                (self.current_trial_times == 1) & (self.choices != -1) & (
-                        self.is_rewardeds == 0)
-                ]
+                (self.current_trial_times == 1)
+                & (self.choices != -1)
+                & (self.is_rewardeds == 0)
+            ]
         )
 
         rew_rpe = np.concatenate([[0], [val_r], rpe_r])
@@ -873,13 +797,13 @@ class GenerateTestPlots:
         plt.figure(figsize=(16, 6))
         plt.subplot(1, 2, 1)
         plt.title("rewarded trials", fontsize=20)
-        plt.plot(np.arange(-2.2, 2.1, 0.1), rew_rpe, color='green')
+        plt.plot(np.arange(-2.2, 2.1, 0.1), rew_rpe, color="green")
         plt.ylim(-2.5, 2.5)
         plt.xlabel("time", fontsize=20)
         plt.ylabel("reward prediction error", fontsize=20)
         plt.subplot(1, 2, 2)
         plt.title("unrewarded trials", fontsize=20)
-        plt.plot(np.arange(-2.2, 2.1, 0.1), unrew_rpe, color='grey')
+        plt.plot(np.arange(-2.2, 2.1, 0.1), unrew_rpe, color="grey")
         plt.ylim(-2.5, 2.5)
         plt.xlabel("time", fontsize=20)
 
@@ -903,14 +827,14 @@ class GenerateTestPlots:
                         (self.current_trial_times == 1)
                         & (self.reward_probs == -1)
                         & (self.trial_count_in_blocks == 1)
-                        ]
+                    ]
                 )
                 mean_logit_l[i - 1] = np.mean(
                     prob_vec[
                         (self.current_trial_times == 1)
                         & (self.reward_probs == 1)
                         & (self.trial_count_in_blocks == 1)
-                        ]
+                    ]
                 )
             else:
                 mean_logit_r[i - 1] = np.mean(
@@ -918,14 +842,14 @@ class GenerateTestPlots:
                         (self.current_trial_times == 1)
                         & (self.reward_probs == 1)
                         & (self.trial_count_in_blocks == i + 1)
-                        ]
+                    ]
                 )
                 mean_logit_l[i - 1] = np.mean(
                     prob_vec[
                         (self.current_trial_times == 1)
                         & (self.reward_probs == -1)
                         & (self.trial_count_in_blocks == i + 1)
-                        ]
+                    ]
                 )
 
             mean_rpe_r[i - 1] = np.mean(
@@ -933,14 +857,14 @@ class GenerateTestPlots:
                     (self.current_trial_times > self.num_states // 2)
                     & (self.reward_probs == 1)
                     & (self.trial_count_in_blocks == i)
-                    ]
+                ]
             )
             mean_rpe_l[i - 1] = np.mean(
                 self.rpes[
                     (self.current_trial_times > self.num_states // 2)
                     & (self.reward_probs == -1)
                     & (self.trial_count_in_blocks == i)
-                    ]
+                ]
             )
 
         color_range = np.arange(1, 31)
@@ -994,7 +918,7 @@ class GenerateTestPlots:
                     self.values[
                         (self.current_trial_times == (i + 1) % self.num_states)
                         & (self.choices == 1)
-                        ]
+                    ]
                 )
                 for i in range(self.num_states)
             ]
@@ -1005,7 +929,7 @@ class GenerateTestPlots:
                     self.values[
                         (self.current_trial_times == (i + 1) % self.num_states)
                         & (self.choices == 0)
-                        ]
+                    ]
                 )
                 for i in range(self.num_states)
             ]
@@ -1025,22 +949,24 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    def lstm_dynamic_across_blocks_3d(self,
-                                      lstm_type='actor',
-                                      state_type='hidden',
-                                      plot_elevation_angle=15,
-                                      plot_azimuth_angle=70,
-                                      save=None):
+    def lstm_dynamic_across_blocks_3d(
+        self,
+        lstm_type="actor",
+        state_type="hidden",
+        plot_elevation_angle=15,
+        plot_azimuth_angle=70,
+        save=None,
+    ):
 
-        if lstm_type == 'actor':
-            if state_type == 'hidden':
+        if lstm_type == "actor":
+            if state_type == "hidden":
                 lstm_state = self.actor_hs
-            elif state_type == 'cell':
+            elif state_type == "cell":
                 lstm_state = self.actor_cs
         else:
-            if state_type == 'hidden':
+            if state_type == "hidden":
                 lstm_state = self.critic_hs
-            elif state_type == 'cell':
+            elif state_type == "cell":
                 lstm_state = self.critic_cs
 
         num_pca_components = 3
@@ -1058,18 +984,20 @@ class GenerateTestPlots:
         trial_count_highest = np.max(self.trial_count_in_blocks)
 
         left_pca = np.zeros(
-            (trial_count_highest - trial_count_lowest + 1, num_pca_components))
+            (trial_count_highest - trial_count_lowest + 1, num_pca_components)
+        )
         right_pca = np.zeros(
-            (trial_count_highest - trial_count_lowest + 1, num_pca_components))
+            (trial_count_highest - trial_count_lowest + 1, num_pca_components)
+        )
 
-        for i in range(trial_count_lowest,
-                       trial_count_highest + trial_count_lowest):
+        for i in range(trial_count_lowest, trial_count_highest + trial_count_lowest):
             left_pca[i - trial_count_lowest, :] = np.mean(
                 pca.transform(
                     lstm_state[
-                        (self.current_trial_times == 2) & (
-                                self.reward_probs == -1) & (
-                                self.trial_count_in_blocks == i)]
+                        (self.current_trial_times == 2)
+                        & (self.reward_probs == -1)
+                        & (self.trial_count_in_blocks == i)
+                    ]
                 ),
                 axis=0,
             )
@@ -1077,15 +1005,17 @@ class GenerateTestPlots:
             right_pca[i - trial_count_lowest, :] = np.mean(
                 pca.transform(
                     lstm_state[
-                        (self.current_trial_times == 2) & (
-                                self.reward_probs == 1) & (
-                                self.trial_count_in_blocks == i)]
+                        (self.current_trial_times == 2)
+                        & (self.reward_probs == 1)
+                        & (self.trial_count_in_blocks == i)
+                    ]
                 ),
                 axis=0,
             )
 
-        color_range = np.arange(trial_count_lowest,
-                                trial_count_lowest + trial_count_highest)
+        color_range = np.arange(
+            trial_count_lowest, trial_count_lowest + trial_count_highest
+        )
 
         plt.figure(figsize=(30, 30))
         ax = plt.axes(projection="3d")
@@ -1137,23 +1067,25 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    def regress_lstm_pca_components(self,
-                                    lstm_type='actor',
-                                    state_type='hidden',
-                                    num_pca_components=3,
-                                    num_trials_back=7,
-                                    num_pca_components_to_plot=1,
-                                    save=None):
+    def regress_lstm_pca_components(
+        self,
+        lstm_type="actor",
+        state_type="hidden",
+        num_pca_components=3,
+        num_trials_back=7,
+        num_pca_components_to_plot=1,
+        save=None,
+    ):
 
-        if lstm_type == 'actor':
-            if state_type == 'hidden':
+        if lstm_type == "actor":
+            if state_type == "hidden":
                 lstm_state = self.actor_hs[self.current_trial_times == 2, :]
-            elif state_type == 'cell':
+            elif state_type == "cell":
                 lstm_state = self.actor_cs[self.current_trial_times == 2, :]
         else:
-            if state_type == 'hidden':
+            if state_type == "hidden":
                 lstm_state = self.critic_hs[self.current_trial_times == 2, :]
-            elif state_type == 'cell':
+            elif state_type == "cell":
                 lstm_state = self.critic_cs[self.current_trial_times == 2, :]
 
         pca = PCA(n_components=num_pca_components)
@@ -1175,22 +1107,23 @@ class GenerateTestPlots:
         # fit and transform the data
         dependent_variables = pd.DataFrame(
             standard_scaler.fit_transform(dependent_variables),
-            columns=dependent_variables.columns)
+            columns=dependent_variables.columns,
+        )
 
         independent_variables = pd.DataFrame()
         for i in range(1, num_trials_back + 1):
-            independent_variables[f"{i}\ntrials\nback"] = 2 * np.roll(
-                self.choices[(self.current_trial_times == 3)],
-                i) - 1
+            independent_variables[f"{i}\ntrials\nback"] = (
+                2 * np.roll(self.choices[(self.current_trial_times == 3)], i) - 1
+            )
         for i in range(1, num_trials_back + 1):
             independent_variables[f"{i}\ntrials\nback\nrpe"] = np.roll(
                 np.mean(
                     np.array(
                         [
                             self.rpes[self.current_trial_times == j]
-                            for j in
-                            range(self.num_states // 2,
-                                  self.num_states // 2 + 15)
+                            for j in range(
+                                self.num_states // 2, self.num_states // 2 + 15
+                            )
                         ]
                     ),
                     axis=0,
@@ -1202,12 +1135,11 @@ class GenerateTestPlots:
                 np.mean(
                     np.array(
                         [
-                            (2 * self.choices[
-                                self.current_trial_times == j] - 1) * self.rpes[
-                                self.current_trial_times == j]
-                            for j in
-                            range(self.num_states // 2,
-                                  self.num_states // 2 + 15)
+                            (2 * self.choices[self.current_trial_times == j] - 1)
+                            * self.rpes[self.current_trial_times == j]
+                            for j in range(
+                                self.num_states // 2, self.num_states // 2 + 15
+                            )
                         ]
                     ),
                     axis=0,
@@ -1221,7 +1153,8 @@ class GenerateTestPlots:
             columns_to_scale.append(f"{i}\ntrials\nback\nchoice\nrpe")
         standard_scaler = preprocessing.StandardScaler()
         independent_variables[columns_to_scale] = standard_scaler.fit_transform(
-            independent_variables[columns_to_scale])
+            independent_variables[columns_to_scale]
+        )
 
         independent_variables = sm.add_constant(independent_variables)
 
@@ -1237,14 +1170,15 @@ class GenerateTestPlots:
             plt.subplot(num_pca_components_to_plot, 1, component_num)
 
             plt.title(
-                f"{pc_name} (R-squared = " f""
+                f"{pc_name} (R-squared = "
+                f""
                 f"{np.round(regression_results.rsquared_adj, 3)})"
             )
 
             plt.plot(
                 range(1, num_trials_back + 1),
                 regression_results.params.values[
-                0 * num_trials_back + 1: 1 * num_trials_back + 1
+                    0 * num_trials_back + 1 : 1 * num_trials_back + 1
                 ],
                 label="Choice",
                 color="green",
@@ -1252,7 +1186,7 @@ class GenerateTestPlots:
             plt.plot(
                 range(1, num_trials_back + 1),
                 regression_results.params.values[
-                1 * num_trials_back + 1: 2 * num_trials_back + 1
+                    1 * num_trials_back + 1 : 2 * num_trials_back + 1
                 ],
                 label="RPE",
                 color="red",
@@ -1260,7 +1194,7 @@ class GenerateTestPlots:
             plt.plot(
                 range(1, num_trials_back + 1),
                 regression_results.params.values[
-                2 * num_trials_back + 1: 3 * num_trials_back + 1
+                    2 * num_trials_back + 1 : 3 * num_trials_back + 1
                 ],
                 label="Choice x RPE",
                 color="blue",
@@ -1286,9 +1220,7 @@ class GenerateTestPlots:
         if save:
             plt.savefig(save, bbox_inches="tight")
 
-    def actor_lstm_PC_overlap_with_output(self,
-                                          num_pca_components=3,
-                                          save=None):
+    def actor_lstm_PC_overlap_with_output(self, num_pca_components=3, save=None):
 
         from environment import TestingEnvironment
         from model_arch import ActorCriticLSTM
@@ -1300,8 +1232,9 @@ class GenerateTestPlots:
             np.load("recorded_data/sequential_activity.npz"),
         )
 
-        actor_weights = MetaRLModel.load_weights(
-            load_model="saved_model/model-62000")["ActorOutput"]
+        actor_weights = MetaRLModel.load_weights(load_model="saved_model/model-62000")[
+            "ActorOutput"
+        ]
 
         lstm_state = self.actor_hs[self.current_trial_times == 2, :]
 
@@ -1320,13 +1253,72 @@ class GenerateTestPlots:
         for pca_component in range(num_pca_components):
             PC_vector = pca.components_[pca_component, :].reshape(-1)
             cosines[pca_component] = np.dot(PC_vector, weight_vector) / (
-                    norm(PC_vector) * norm(weight_vector))
+                norm(PC_vector) * norm(weight_vector)
+            )
 
         plt.figure(figsize=(8, 8))
         plt.title("overlap of output activity PCs\n with actor readout weights")
         sns.barplot(y=cosines, x=["PC 1", "PC 2", "PC 3"], color="Blue")
-        plt.ylabel('cosine similarity')
+        plt.ylabel("cosine similarity")
         plt.ylim([-0.2, 1.0])
 
         if save:
             plt.savefig(save, bbox_inches="tight")
+
+
+def plot_model_performances(
+    input_types=[
+        "sequential",
+        "persistent",
+    ],
+    labels=[
+        "choice-selective \nPL-NAc activity",
+        "choice-selective \npersistent activity",
+    ],
+    episodes=np.arange(10000, 72000, 2000),
+    learning_rate=0.001,
+    num_hidden_units=128,
+    save=None,
+):
+    """Generate the average reward received plot for model at different training stages.
+
+    Args:
+        input_types (list, optional): List of PL-NAc input types.
+        Defaults to [ "sequential", "persistent", ].
+        labels (list, optional): Label corresponding to the PL-NAc input types.
+        Defaults to [ "choice-selective \nPL-NAc activity", "choice-selective \npersistent activity", ].
+        episodes ([type], optional): List of training stages. Defaults to
+        np.arange(10000, 72000, 2000).
+        learning_rate (float, optional): Learning rate used. Defaults to 0.001.
+        num_hidden_units (int, optional): Number of hidden units of the LSTMS. Defaults
+        to 128.
+        save ([type], optional): Location to save the plot. Defaults to None.
+    """
+
+    performance_results = {input_type: [] for input_type in input_types}
+
+    fig = plt.figure(figsize=(10, 6))
+
+    for input_type in input_types:
+        test_destination = (
+            f"training_data/{input_type}_input/learning_rate="
+            f"{learning_rate}_hidden_units={num_hidden_units}/"
+            f"model_performances/"
+        )
+        for episode in episodes:
+            testing_file = test_destination + f"/model-{episode}/" + "test_0.npz"
+            testing_data = np.load(testing_file)
+            is_rewardeds = testing_data["is_rewardeds"]
+            current_trial_times = testing_data["current_trial_times"]
+            rewarded_trials = is_rewardeds[current_trial_times == 2]
+            performance_results[input_type].append(np.mean(rewarded_trials))
+        plt.plot(episodes, performance_results[input_type], label=input_type)
+
+    plt.xlabel("episodes")
+    plt.ylabel("reward rate")
+    plt.axhline(y=0.4, linestyle="dotted", color="k")
+    plt.ylim(0, 0.6)
+    plt.legend(labels)
+
+    if save:
+        plt.savefig(save, bbox_inches="tight")
