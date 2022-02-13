@@ -35,6 +35,15 @@ class GenerateTestPlots:
 
         print(f"reward rate = " f"{np.mean(self.rewarded_trials)}")
 
+        block_switches = np.where(np.diff(self.high_prob_blocks) != 0)[0] + 1
+
+        print(
+            f"mean block length ="
+            f"{np.mean(np.diff(block_switches))}"
+            "\u00B1"
+            f"{np.std(np.diff(block_switches))}"
+        )
+
         end_num_trials = start_num_trials + num_tr
 
         rew_side = self.choices * self.rewarded_trials

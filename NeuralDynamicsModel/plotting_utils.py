@@ -119,6 +119,15 @@ class GenerateTestPlots:
         logits = np.roll(logits, 1)
         max_logit, mid_logit = np.max(logits), (np.max(logits) + np.min(logits)) / 2
 
+        switch_high = np.where(np.diff(high_prob) != 0)[0] + 1
+
+        print(
+            f"mean block length ="
+            f"{np.mean(np.diff(switch_high))}"
+            "\u00B1"
+            f"{np.std(np.diff(switch_high))}"
+        )
+
         plt.figure(figsize=(16, 5))
         plt.scatter(
             np.arange(start_num_trials, end_num_trials),
